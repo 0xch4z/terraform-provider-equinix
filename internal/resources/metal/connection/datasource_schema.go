@@ -74,6 +74,11 @@ func dataSourceSchema(ctx context.Context) schema.Schema {
 				Computed:    true,
 				ElementType: types.Int64Type,
 			},
+			"vrfs": schema.ListAttribute{
+				Description: "Attached vrfs, only in shared connection",
+				Computed:    true,
+				ElementType: types.StringType,
+			},
 			"service_token_type": schema.StringAttribute{
 				Description: "Only used with shared connection. Type of service token to use for the connection, a_side or z_side",
 				Computed:    true,
