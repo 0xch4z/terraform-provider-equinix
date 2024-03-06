@@ -35,6 +35,11 @@ type ResourceModel struct {
 	Token            types.String                                       `tfsdk:"token"`
 	Ports            fwtypes.ListNestedObjectValueOf[PortModel]         `tfsdk:"ports"`          // List of Port
 	ServiceTokens    fwtypes.ListNestedObjectValueOf[ServiceTokenModel] `tfsdk:"service_tokens"` // List of ServiceToken
+	CustomerIP       types.String                                       `tfsdk:"customer_ip"`
+	MD5              types.String                                       `tfsdk:"md5"`
+	MetalIP          types.String                                       `tfsdk:"metal_ip"`
+	PeerASN          types.String                                       `tfsdk:"peer_asn"`
+	Subnet           types.String                                       `tfsdk:"subnet"`
 }
 
 type DataSourceModel struct {

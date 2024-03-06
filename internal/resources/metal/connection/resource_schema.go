@@ -143,6 +143,21 @@ func resourceSchema(ctx context.Context) schema.Schema {
 					listplanmodifier.RequiresReplace(),
 				},
 			},
+			"customer_ip": schema.StringAttribute{
+				Optional: true,
+			},
+			"md5": schema.StringAttribute{
+				Optional: true,
+			},
+			"metal_ip": schema.StringAttribute{
+				Optional: true,
+			},
+			"peer_asn": schema.StringAttribute{
+				Optional: true,
+			},
+			"subnet": schema.StringAttribute{
+				Optional: true,
+			},
 			"service_token_type": schema.StringAttribute{
 				Description: "Only used with shared connection. Type of service token to use for the connection, a_side or z_side",
 				Optional:    true,

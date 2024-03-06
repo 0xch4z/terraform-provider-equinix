@@ -123,6 +123,8 @@ func testAccMetalConnectionConfig_SharedPrimaryVrf(randstr string) string {
 			vrfs               = [
 				equinix_metal_vrf.test1.id,
 			]
+
+            peer_asn = "6500"
         }`,
 		randstr, randstr, randstr)
 }
@@ -314,6 +316,43 @@ func TestAccMetalConnection_sharedRedundantVrf(t *testing.T) {
 						"data.equinix_metal_connection.test", "service_token_type", "a_side"),
 					resource.TestCheckResourceAttr(
 						"data.equinix_metal_connection.test", "service_tokens.0.max_allowed_speed", "200Mbps"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccMetalConnection_sharedPrimaryVrf(t *testing.T) {
+	rs := acctest.RandString(10)
+
+	var connID string
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { acceptance.TestAccPreCheckMetal(t) },
+		ExternalProviders:        acceptance.TestExternalProviders,
+		ProtoV5ProviderFactories: acceptance.ProtoV5ProviderFactories,
+		CheckDestroy:             testAccMetalConnectionCheckDestroyed,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMetalConnectionConfig_SharedPrimaryVrf(rs),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "metro", "sv"),
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "service_tokens.0.type", "a_side"),
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "service_token_type", "a_side"),
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "service_tokens.0.max_allowed_speed", "200Mbps"),
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "contact_email", "tfacc@example.com"),
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "vrfs.#", "1",
+					),
+					resource.TestCheckResourceAttr(
+						"equinix_metal_connection.test", "redundancy", "primary",
+					),
+					testAccMetalConnectionHasID("equinix_metal_connection.test", &connID),
 				),
 			},
 		},

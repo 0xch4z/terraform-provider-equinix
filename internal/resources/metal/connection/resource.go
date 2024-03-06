@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/equinix/equinix-sdk-go/services/metalv1"
 	equinix_errors "github.com/equinix/terraform-provider-equinix/internal/errors"
@@ -35,6 +36,54 @@ func (r *Resource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = resourceSchema(ctx)
+}
+
+func setVC(ctx context.Context, plan *ResourceModel, conn *metalv1.Interconnection, client *metalv1.APIClient) (*metalv1.VirtualCircuit, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	port := conn.GetPorts()[0]
+	virtualCircuitID := port.GetVirtualCircuits()[0].VrfVirtualCircuit.GetId()
+
+	updateInput := new(metalv1.VrfVirtualCircuitUpdateInput)
+
+	if customerIP := plan.CustomerIP.ValueString(); customerIP != "" {
+		updateInput.CustomerIp = &customerIP
+	}
+
+	if md5 := plan.MD5.ValueString(); md5 != "" {
+		updateInput.Md5 = &md5
+	}
+
+	if metalIP := plan.MetalIP.ValueString(); metalIP != "" {
+		updateInput.MetalIp = &metalIP
+	}
+
+	if peerASN := plan.PeerASN.ValueString(); peerASN != "" {
+		peerAsn, err := strconv.Atoi(plan.PeerASN.ValueString())
+		if err != nil {
+			diags.AddError("invalid peerASN", err.Error())
+			return nil, diags
+		}
+
+		peerASN32 := int32(peerAsn)
+		updateInput.PeerAsn = &peerASN32
+	}
+
+	if subnet := plan.Subnet.ValueString(); subnet != "" {
+		updateInput.Subnet = &subnet
+	}
+
+	updateReq := client.InterconnectionsApi.UpdateVirtualCircuit(ctx, virtualCircuitID).
+		VirtualCircuitUpdateInput(metalv1.VirtualCircuitUpdateInput{
+			VrfVirtualCircuitUpdateInput: updateInput,
+		})
+
+	vc, _, err := updateReq.Execute()
+	if err != nil {
+		diags.AddError("Failed to set VRF", err.Error())
+	}
+
+	return vc, diags
 }
 
 func (r *Resource) Create(
@@ -115,6 +164,15 @@ func (r *Resource) Create(
 			)
 			return
 		}
+
+		// Configure the VRF
+
+	}
+
+	_, setDiags := setVC(ctx, &plan, conn, client)
+	resp.Diagnostics.Append(setDiags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Use API client to get the current state of the resource
@@ -227,6 +285,13 @@ func (r *Resource) Update(
 	conn, diags := getConnection(ctx, client, &resp.State, id)
 	if diags != nil {
 		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	_, setDiags := setVC(ctx, &plan, conn, client)
+	resp.Diagnostics.Append(setDiags...)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
